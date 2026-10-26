@@ -89,6 +89,9 @@ function onBackend(api) {
     } catch (e) {
       if (e && e.code === 'permission-denied') {
         showGate(`La cuenta ${user.email} no tiene acceso. Pide a quien gestiona la app que la añada.`, { signOut: true });
+      } else if (navigator.onLine) {
+        // Con internet, "offline" suele significar que la base de datos de Firestore aún no existe
+        showGate('No se pudo conectar con la base de datos. Comprueba que has creado Firestore Database en tu proyecto de Firebase.', { signOut: true });
       } else {
         showGate('No se pudo conectar. La primera vez que entras necesitas internet.', { signOut: true });
       }
