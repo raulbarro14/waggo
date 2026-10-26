@@ -5,7 +5,7 @@
  * - Firestore y el inicio de sesión no pasan por aquí; Firestore tiene su propia caché.
  * Sube CACHE (v2, v3…) si cambias la lista de archivos.
  */
-const CACHE = 'turnos-paseo-v1';
+const CACHE = 'turnos-paseo-v2';
 const SHELL = [
   './',
   './index.html',
@@ -46,7 +46,9 @@ self.addEventListener('fetch', event => {
 async function networkFirst(req) {
   const cache = await caches.open(CACHE);
   try {
-    const res = await fetch(req);
+    // no-cache: pregunta siempre al servidor, saltándose la caché de 10 min de GitHub Pages
+    const fresh = req.mode === 'navigate' ? new Request(req.url, { cache: 'no-cache' }) : new Request(req, { cache: 'no-cache' });
+    const res = await fetch(fresh);
     if (res.ok) cache.put(req, res.clone());
     return res;
   } catch (e) {
