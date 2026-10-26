@@ -103,10 +103,19 @@ function onBackend(api) {
   });
 }
 
+// Los errores se muestran en la propia pantalla de entrada, que tapa los avisos normales
+const SIGNIN_ERRORS = {
+  'auth/configuration-not-found': 'El inicio de sesión con Google no está activado en Firebase. Actívalo en Authentication → Método de inicio de sesión → Google.',
+  'auth/operation-not-allowed': 'El inicio de sesión con Google no está activado en Firebase. Actívalo en Authentication → Método de inicio de sesión → Google.',
+  'auth/unauthorized-domain': `Este dominio no está autorizado en Firebase. Añade ${location.hostname} en Authentication → Configuración → Dominios autorizados.`,
+  'auth/network-request-failed': 'No hay conexión. Comprueba internet e inténtalo de nuevo.'
+};
+
 function signIn() {
   backend.signIn().catch(e => {
-    if (e && (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request')) return;
-    toast('No se pudo entrar. Inténtalo de nuevo.');
+    const code = e && e.code;
+    if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') return;
+    showGate(SIGNIN_ERRORS[code] || `No se pudo entrar (${code || 'error desconocido'}). Inténtalo de nuevo.`, { signIn: true });
   });
 }
 function signOutUser() {
