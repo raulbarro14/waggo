@@ -1,6 +1,6 @@
 {
-  "name": "Turnos de paseo",
-  "short_name": "Paseos",
+  "name": "Waggo",
+  "short_name": "Waggo",
   "description": "Calendario compartido de paseos de perros: rutinas, cambios de un día y quién saca a cada perro.",
   "lang": "es-ES",
   "start_url": "./",

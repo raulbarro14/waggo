@@ -1,4 +1,4 @@
-# Turnos de paseo
+# Waggo
 
 App para organizar quién saca a los perros: rutinas semanales, cambios de un día, paseos puntuales y "hecho". Se instala en el móvil y en el ordenador como una app (PWA), funciona sin conexión y se sincroniza entre todos los de casa.
 
