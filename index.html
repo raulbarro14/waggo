@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="es-ES">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0E6B62">
+<meta name="description" content="Calendario compartido de paseos de perros.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Paseos">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<title>Turnos de paseo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Figtree:wght@400;500;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<style>
+  /* Una sola columna de app móvil: cabecera con pestañas, lista que hace scroll, FAB y bottom sheets */
+  :root {
+    /* Paleta Clara */
+    --bg: #F1F4F2;
+    --surface: #FFFFFF;
+    --text: #13302B;
+    --text-sec: #4A6560;
+    --line: #D3DDD8;
+    --accent: #0E6B62;
+    --accent-hover: #0a4f48;
+    --tennis: #D8E84A;
+    --warn-bg: #FBE9DC;
+    --warn-text: #A64A14;
+    --success: #2F7D4F;
+    --danger: #d32f2f;
+    --danger-bg: #ffebee;
+    --sheet-bg: rgba(0,0,0,0.4);
+    --on-accent: #FFFFFF;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      /* Paleta Oscura */
+      --bg: #0E1A18;
+      --surface: #172B28;
+      --text: #E8F0EE;
+      --text-sec: #A0B6B1;
+      --line: #294A44;
+      --accent: #5CC9BC;
+      --accent-hover: #7FDDD2;
+      --tennis: #D8E84A;
+      --warn-bg: #4A2411;
+      --warn-text: #FBE9DC;
+      --success: #4EBE7C;
+      --danger: #EF5350;
+      --danger-bg: #401818;
+      --sheet-bg: rgba(0,0,0,0.7);
+      --on-accent: #0E1A18;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0E1A18;
+    --surface: #172B28;
+    --text: #E8F0EE;
+    --text-sec: #A0B6B1;
+    --line: #294A44;
+    --accent: #5CC9BC;
+    --accent-hover: #7FDDD2;
+    --tennis: #D8E84A;
+    --warn-bg: #4A2411;
+    --warn-text: #FBE9DC;
+    --success: #4EBE7C;
+    --danger: #EF5350;
+    --danger-bg: #401818;
+    --sheet-bg: rgba(0,0,0,0.7);
+    --on-accent: #0E1A18;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Figtree', system-ui, sans-serif;
+    background-color: var(--bg);
+    color: var(--text);
+    display: flex;
+    justify-content: center;
+    overflow-x: hidden;
+  }
+  h1, h2, h3, .bricolage { font-family: 'Bricolage Grotesque', 'Figtree', system-ui, sans-serif; font-weight: 700; }
+  .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  #app {
+    width: 100%;
+    max-width: 640px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  /* Header & Nav */
+  [hidden] { display: none !important; }
+  header {
+    padding: env(safe-area-inset-top, 0px) max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px));
+    background: var(--surface); border-bottom: 1px solid var(--line); z-index: 10;
+  }
+
+  /* Pantalla de entrada */
+  .gate {
+    position: fixed; inset: 0; z-index: 300; background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px max(16px, env(safe-area-inset-right, 0px)) 24px max(16px, env(safe-area-inset-left, 0px));
+  }
+  .gate-card { width: 100%; max-width: 360px; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
+  .gate-card img { border-radius: 18px; }
+  .gate-card h1 { font-size: 28px; text-wrap: balance; }
+  .gate-card p { color: var(--text-sec); margin-bottom: 8px; }
+  .gate-card .btn { margin-bottom: 0; }
+  .account-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: default; }
+  .account-row > div { min-width: 0; overflow-wrap: anywhere; }
+  .header-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 16px 0; }
+  .header-top h1 { font-size: 24px; }
+  .header-filter select {
+    background: var(--bg); color: var(--text); border: 1px solid var(--line);
+    padding: 8px 12px; border-radius: 20px; font-family: inherit; font-weight: 500;
+    min-height: 40px; outline: none; width: auto; font-size: 14px;
+  }
+  nav { display: flex; gap: 16px; overflow-x: auto; scrollbar-width: none; }
+  nav::-webkit-scrollbar { display: none; }
+  .tab {
+    padding: 12px 4px; font-weight: 600; color: var(--text-sec); cursor: pointer;
+    border-bottom: 2px solid transparent; min-height: 40px; white-space: nowrap;
+  }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* Banners */
+  #readonly-banner {
+    background: var(--warn-bg); color: var(--warn-text); padding: 12px 16px;
+    font-size: 14px; font-weight: 500; display: none; text-align: center;
+  }
+  #offline-banner {
+    background: var(--line); color: var(--text); padding: 8px 16px;
+    font-size: 13px; display: none; text-align: center;
+  }
+
+  /* Main Content */
+  main {
+    flex: 1; overflow-y: auto;
+    padding: 16px max(16px, env(safe-area-inset-right, 0px)) calc(100px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  }
+  .view { display: none; animation: fadeIn 0.2s ease; }
+  .view.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) {
+    .view, .toast { animation: none !important; }
+    .sheet, .sheet-overlay, .slider, .slider:before { transition: none !important; }
+  }
+
+  /* Calendar Week */
+  .week-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .week-nav { display: flex; align-items: center; gap: 8px; }
+  .icon-btn {
+    background: transparent; border: none; color: var(--text); font-size: 20px;
+    min-width: 40px; min-height: 40px; border-radius: 50%; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .icon-btn:hover { background: var(--line); }
+  .btn-today { background: var(--line); border: none; padding: 6px 12px; border-radius: 16px; font-weight: 600; color: var(--text); cursor: pointer; min-height: 40px; }
+  #calendar-month::first-letter { text-transform: uppercase; }
+
+  .days-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 24px; }
+  .day-btn {
+    display: flex; flex-direction: column; align-items: center; padding: 8px 0;
+    border: 1px solid var(--line); border-radius: 12px; background: var(--surface);
+    cursor: pointer; min-height: 60px; color: var(--text);
+  }
+  .day-btn.selected { border-color: var(--accent); background: var(--bg); }
+  .day-btn.today { box-shadow: inset 0 0 0 2px var(--tennis); }
+  .day-name { font-size: 12px; color: var(--text-sec); text-transform: uppercase; font-weight: 600; }
+  .day-num { font-size: 16px; font-weight: 700; margin-top: 2px; }
+  .day-dots { display: flex; gap: 2px; margin-top: 4px; height: 6px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; }
+
+  /* Cards */
+  .section-title { font-size: 18px; margin: 24px 0 12px; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .section-subtitle { font-size: 14px; color: var(--text-sec); font-weight: normal; }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+    padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    cursor: pointer; transition: transform 0.1s;
+  }
+  .card:active { transform: scale(0.98); }
+  .card.skipped { opacity: 0.6; border-style: dashed; text-decoration: line-through; }
+
+  .card-header { display: flex; justify-content: space-between; margin-bottom: 8px; align-items: flex-start; }
+  .time-badge { font-weight: 600; background: var(--bg); padding: 4px 8px; border-radius: 8px; font-size: 14px; }
+  .dur-badge { font-size: 13px; color: var(--text-sec); }
+
+  .card-title { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;}
+  .card-person { font-size: 14px; color: var(--text-sec); margin-top: 4px; }
+  .card-note { font-size: 13px; color: var(--text-sec); margin-top: 8px; background: var(--bg); padding: 8px; border-radius: 8px; overflow-wrap: anywhere; }
+
+  .tags { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .tag { font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 600; }
+  .tag-unassigned { background: var(--warn-bg); color: var(--warn-text); }
+  .tag-changed { background: var(--tennis); color: #13302B; }
+  .tag-routine { background: var(--line); color: var(--text-sec); }
+  .tag-active { background: var(--accent); color: var(--on-accent); }
+
+  .card-actions { margin-top: 12px; display: flex; justify-content: flex-end; }
+  .btn-check {
+    background: var(--bg); border: 1px solid var(--line); color: var(--text);
+    padding: 8px 16px; border-radius: 20px; font-weight: 600; cursor: pointer; min-height: 40px;
+  }
+  .btn-check.done { background: var(--success); color: var(--on-accent); border-color: var(--success); }
+
+  /* Empty States */
+  .empty-state { text-align: center; padding: 40px 16px; color: var(--text-sec); }
+  .empty-state h3 { color: var(--text); margin-bottom: 8px; }
+
+  /* Lists (Dogs/People) */
+  .list-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px; background: var(--surface); border: 1px solid var(--line);
+    border-radius: 12px; margin-bottom: 8px; cursor: pointer;
+  }
+  .list-item-content { display: flex; align-items: center; gap: 12px; min-width: 0; }
+
+  /* Settings */
+  .form-group { margin-bottom: 16px; }
+  .form-group label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; color: var(--text-sec); }
+  .input-row { display: flex; gap: 12px; }
+  .input-row > div { flex: 1; min-width: 0; }
+  input[type="text"], input[type="time"], input[type="date"], input[type="number"], select, textarea {
+    width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 12px;
+    background: var(--surface); color: var(--text); font-family: inherit; font-size: 16px;
+    outline: none; min-height: 48px;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+
+  /* FAB */
+  .fab {
+    position: absolute; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); right: calc(24px + env(safe-area-inset-right, 0px));
+    background: var(--accent); color: var(--on-accent);
+    border: none; border-radius: 16px; padding: 0 20px; height: 56px; font-size: 16px;
+    font-weight: 600; box-shadow: 0 4px 12px rgba(14, 107, 98, 0.3); cursor: pointer;
+    display: flex; align-items: center; gap: 8px; z-index: 50; transition: transform 0.2s;
+  }
+  .fab:active { transform: scale(0.95); }
+  .fab svg { width: 24px; height: 24px; fill: currentColor; }
+
+  /* Bottom Sheets */
+  .sheet-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--sheet-bg);
+    z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+    display: flex; justify-content: center; align-items: flex-end;
+  }
+  .sheet-overlay.open { opacity: 1; pointer-events: auto; }
+  .sheet {
+    background: var(--surface); width: 100%; max-width: 560px;
+    border-radius: 20px 20px 0 0; padding: 24px 16px max(24px, env(safe-area-inset-bottom));
+    transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.1, 0.9, 0.2, 1);
+    max-height: 90vh; overflow-y: auto;
+  }
+  .sheet-overlay.open .sheet { transform: translateY(0); }
+  .sheet-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+  .sheet-title { font-size: 20px; }
+  .close-btn { background: var(--line); border: none; width: 32px; height: 32px; border-radius: 16px; color: var(--text); cursor: pointer; font-size: 18px; font-weight: bold;}
+
+  .btn {
+    width: 100%; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: 600;
+    border: none; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px;
+    min-height: 48px; margin-bottom: 12px; font-family: inherit;
+  }
+  .btn-primary { background: var(--accent); color: var(--on-accent); }
+  .btn-secondary { background: var(--bg); color: var(--text); border: 1px solid var(--line); }
+  .btn-danger { background: var(--danger-bg); color: var(--danger); border: 1px solid transparent; }
+
+  /* Chips */
+  .chips-group { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+  .chip {
+    padding: 8px 16px; background: var(--bg); border: 1px solid var(--line);
+    border-radius: 20px; font-size: 14px; font-weight: 600; cursor: pointer; color: var(--text);
+  }
+  .chip.active { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+  .chip-day { padding: 8px 12px; }
+
+  /* Colors */
+  .color-picker { display: flex; gap: 8px; flex-wrap: wrap; }
+  .color-circle {
+    width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
+    border: 2px solid transparent; transition: transform 0.1s;
+  }
+  .color-circle.active { border-color: var(--text); transform: scale(1.1); }
+
+  /* Toast */
+  #toast-container {
+    position: fixed; bottom: max(24px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%);
+    z-index: 200; display: flex; flex-direction: column; gap: 8px; pointer-events: none;
+    width: max-content; max-width: calc(100vw - 32px);
+  }
+  .toast {
+    background: var(--text); color: var(--bg); padding: 12px 24px; border-radius: 24px;
+    font-size: 14px; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.15); text-align: center;
+    animation: toastIn 0.3s cubic-bezier(0.1, 0.9, 0.2, 1), toastOut 0.3s 2.3s forwards;
+  }
+  @keyframes toastIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  @keyframes toastOut { from { opacity: 1; } to { opacity: 0; } }
+
+  /* Switch */
+  .switch-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; }
+  .switch {
+    position: relative; display: inline-block; width: 50px; height: 28px;
+  }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider {
+    position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+    background-color: var(--line); transition: .4s; border-radius: 34px;
+  }
+  .slider:before {
+    position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px;
+    background-color: #FFFFFF; transition: .4s; border-radius: 50%;
+  }
+  input:checked + .slider { background-color: var(--accent); }
+  input:checked + .slider:before { transform: translateX(22px); }
+  input:disabled + .slider { opacity: 0.5; cursor: not-allowed; }
+</style>
+
+</head>
+<body>
+
+<div id="app">
+  <div id="offline-banner">Sin conexión. Tus cambios se guardan en este dispositivo y se envían al volver internet.</div>
+  <div id="readonly-banner">Solo lectura. Pide a quien gestiona la app que te añada como editor.</div>
+
+  <header>
+    <div class="header-top">
+      <h1 class="bricolage">Turnos de paseo</h1>
+      <div class="header-filter">
+        <select id="filter-person" aria-label="Filtrar por persona">
+          <option value="ALL">Todos</option>
+        </select>
+      </div>
+    </div>
+    <nav>
+      <div class="tab active" data-target="view-calendar" tabindex="0">Calendario</div>
+      <div class="tab" data-target="view-routines" tabindex="0">Rutinas</div>
+      <div class="tab" data-target="view-settings" tabindex="0">Perros y personas</div>
+    </nav>
+  </header>
+
+  <main>
+    <!-- VISTA CALENDARIO -->
+    <div id="view-calendar" class="view active">
+      <div class="week-bar">
+        <div class="week-nav">
+          <button class="icon-btn" id="btn-prev-week" aria-label="Semana anterior">‹</button>
+          <button class="icon-btn" id="btn-next-week" aria-label="Semana siguiente">›</button>
+        </div>
+        <div class="bricolage" id="calendar-month">Octubre 2026</div>
+        <button class="btn-today" id="btn-today">Hoy</button>
+      </div>
+      <div class="days-grid" id="days-grid"></div>
+
+      <div class="bricolage section-title" id="day-title">Lunes 26 <span class="section-subtitle" id="day-subtitle"></span></div>
+      <div id="calendar-list"></div>
+    </div>
+
+    <!-- VISTA RUTINAS -->
+    <div id="view-routines" class="view">
+      <div id="routines-list"></div>
+    </div>
+
+    <!-- VISTA SETTINGS (Perros y Personas) -->
+    <div id="view-settings" class="view">
+      <h2 class="bricolage section-title">Perros</h2>
+      <div id="dogs-list"></div>
+      <button class="btn btn-secondary auth-required" id="btn-add-dog" style="margin-bottom: 24px;">+ Añadir perro</button>
+
+      <h2 class="bricolage section-title">Personas</h2>
+      <div id="people-list"></div>
+      <button class="btn btn-secondary auth-required" id="btn-add-person" style="margin-bottom: 24px;">+ Añadir persona</button>
+
+      <h2 class="bricolage section-title">Horarios de turnos</h2>
+      <div class="form-group input-row auth-required">
+        <div>
+          <label for="set-shift-manana">Mañana</label>
+          <input type="time" id="set-shift-manana" class="mono">
+        </div>
+        <div>
+          <label for="set-shift-mediodia">Mediodía</label>
+          <input type="time" id="set-shift-mediodia" class="mono">
+        </div>
+        <div>
+          <label for="set-shift-noche">Noche</label>
+          <input type="time" id="set-shift-noche" class="mono">
+        </div>
+      </div>
+
+      <h2 class="bricolage section-title">Cuenta</h2>
+      <div class="list-item account-row">
+        <div id="account-email"></div>
+        <button class="btn-check" id="btn-signout">Cerrar sesión</button>
+      </div>
+    </div>
+  </main>
+
+  <button class="fab auth-required" id="main-fab" aria-label="Añadir">
+    <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+    <span id="fab-text">Paseo</span>
+  </button>
+
+  <div id="toast-container"></div>
+
+  <!-- Pantalla de entrada: visible hasta que se confirma el acceso -->
+  <div class="gate" id="gate">
+    <div class="gate-card">
+      <img src="icons/icon-192.png" alt="" width="72" height="72">
+      <h1 class="bricolage">Turnos de paseo</h1>
+      <p id="gate-msg">Cargando…</p>
+      <button class="btn btn-primary" id="btn-signin" hidden>Entrar con Google</button>
+      <button class="btn btn-secondary" id="btn-signout-gate" hidden>Usar otra cuenta</button>
+    </div>
+  </div>
+
+  <!-- BOTTOM SHEETS -->
+
+  <!-- Menú Paseo -->
+  <div class="sheet-overlay" id="sheet-walk-menu">
+    <div class="sheet">
+      <div class="sheet-header">
+        <h3 class="sheet-title bricolage">Opciones del paseo</h3>
+        <button class="close-btn" data-close aria-label="Cerrar">✕</button>
+      </div>
+      <div id="walk-menu-actions"></div>
+    </div>
+  </div>
+
+  <!-- Formulario Paseo (Puntual / Override) -->
+  <div class="sheet-overlay" id="sheet-form-walk">
+    <div class="sheet">
+      <div class="sheet-header">
+        <h3 class="sheet-title bricolage" id="fw-title">Paseo</h3>
+        <button class="close-btn" data-close aria-label="Cerrar">✕</button>
+      </div>
+      <div class="form-group" id="fw-dogs-group">
+        <label>Perros</label>
+        <div class="chips-group" id="fw-dogs"></div>
+      </div>
+      <div class="form-group">
+        <label for="fw-person">Persona</label>
+        <select id="fw-person"></select>
+      </div>
+      <div class="form-group" id="fw-date-group">
+        <label for="fw-date">Fecha</label>
+        <input type="date" id="fw-date" class="mono">
+      </div>
+      <div class="form-group input-row">
+        <div>
+          <label for="fw-shift">Turno</label>
+          <select id="fw-shift">
+            <option value="">Personalizado</option>
+            <option value="manana">Mañana</option>
+            <option value="mediodia">Mediodía</option>
+            <option value="noche">Noche</option>
+          </select>
+        </div>
+        <div>
+          <label for="fw-time">Hora</label>
+          <input type="time" id="fw-time" class="mono">
+        </div>
+        <div id="fw-dur-group">
+          <label for="fw-dur">Minutos</label>
+          <input type="number" id="fw-dur" min="5" max="240" step="5" value="30" class="mono">
+        </div>
+      </div>
+      <div class="form-group" id="fw-note-group">
+        <label for="fw-note">Nota</label>
+        <input type="text" id="fw-note" maxlength="80">
+      </div>
+      <button class="btn btn-primary" id="fw-save">Guardar</button>
+      <button class="btn btn-danger" id="fw-delete" style="display:none;">Eliminar paseo</button>
+    </div>
+  </div>
+
+  <!-- Formulario Rutina -->
+  <div class="sheet-overlay" id="sheet-form-routine">
+    <div class="sheet">
+      <div class="sheet-header">
+        <h3 class="sheet-title bricolage" id="fr-title">Nueva rutina</h3>
+        <button class="close-btn" data-close aria-label="Cerrar">✕</button>
+      </div>
+      <div class="form-group">
+        <label>Perros</label>
+        <div class="chips-group" id="fr-dogs"></div>
+      </div>
+      <div class="form-group">
+        <label for="fr-person">Persona (Opcional)</label>
+        <select id="fr-person"></select>
+      </div>
+      <div class="form-group">
+        <label>Días de la semana</label>
+        <div class="chips-group" id="fr-days">
+          <div class="chip chip-day" data-val="1">L</div><div class="chip chip-day" data-val="2">M</div>
+          <div class="chip chip-day" data-val="3">X</div><div class="chip chip-day" data-val="4">J</div>
+          <div class="chip chip-day" data-val="5">V</div><div class="chip chip-day" data-val="6">S</div>
+          <div class="chip chip-day" data-val="7">D</div>
+        </div>
+      </div>
+      <div class="form-group input-row">
+        <div>
+          <label for="fr-shift">Turno</label>
+          <select id="fr-shift">
+            <option value="">Personalizado</option>
+            <option value="manana">Mañana</option>
+            <option value="mediodia">Mediodía</option>
+            <option value="noche">Noche</option>
+          </select>
+        </div>
+        <div>
+          <label for="fr-time">Hora</label>
+          <input type="time" id="fr-time" class="mono">
+        </div>
+        <div>
+          <label for="fr-dur">Minutos</label>
+          <input type="number" id="fr-dur" min="5" max="240" step="5" value="30" class="mono">
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="fr-from">Empieza el (Opcional)</label>
+        <input type="date" id="fr-from" class="mono">
+      </div>
+      <div class="form-group">
+        <label for="fr-note">Nota</label>
+        <input type="text" id="fr-note" maxlength="80">
+      </div>
+      <div class="switch-row">
+        <label class="bricolage" for="fr-active" style="font-size: 16px;">Rutina activa</label>
+        <label class="switch"><input type="checkbox" id="fr-active" checked><span class="slider"></span></label>
+      </div>
+      <button class="btn btn-primary" id="fr-save" style="margin-top: 16px;">Guardar rutina</button>
+      <button class="btn btn-danger" id="fr-delete" style="display:none;">Eliminar rutina</button>
+    </div>
+  </div>
+
+  <!-- Formulario Perro/Persona -->
+  <div class="sheet-overlay" id="sheet-form-entity">
+    <div class="sheet">
+      <div class="sheet-header">
+        <h3 class="sheet-title bricolage" id="fe-title">Añadir</h3>
+        <button class="close-btn" data-close aria-label="Cerrar">✕</button>
+      </div>
+      <div class="form-group">
+        <label for="fe-name">Nombre</label>
+        <input type="text" id="fe-name" maxlength="40">
+      </div>
+      <div class="form-group" id="fe-color-group">
+        <label>Color</label>
+        <div class="color-picker" id="fe-color"></div>
+      </div>
+      <div class="form-group" id="fe-note-group">
+        <label for="fe-note">Nota breve</label>
+        <input type="text" id="fe-note" maxlength="80">
+      </div>
+      <button class="btn btn-primary" id="fe-save">Guardar</button>
+      <button class="btn btn-danger" id="fe-delete" style="display:none;">Eliminar</button>
+    </div>
+  </div>
+
+  <!-- Confirmación Borrado -->
+  <div class="sheet-overlay" id="sheet-confirm">
+    <div class="sheet">
+      <div class="sheet-header">
+        <h3 class="sheet-title bricolage">¿Estás seguro?</h3>
+        <button class="close-btn" data-close aria-label="Cerrar">✕</button>
+      </div>
+      <p id="confirm-msg" style="margin-bottom: 24px; color: var(--text-sec);"></p>
+      <button class="btn btn-danger" id="btn-confirm-yes">Sí, eliminar</button>
+      <button class="btn btn-secondary" data-close>Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script type="module" src="backend.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
+  }
+</script>
+</body>
+</html>

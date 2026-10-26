@@ -1,0 +1,17 @@
+{
+  "name": "Turnos de paseo",
+  "short_name": "Paseos",
+  "description": "Calendario compartido de paseos de perros: rutinas, cambios de un día y quién saca a cada perro.",
+  "lang": "es-ES",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F1F4F2",
+  "theme_color": "#0E6B62",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

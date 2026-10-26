@@ -1,0 +1,36 @@
+rules_version = '2';
+
+// Quién puede entrar lo decide el documento access/members, que solo se edita
+// desde la consola de Firebase:
+//   editors: ["correo1@gmail.com", ...]   ven y editan
+//   viewers: ["correo2@gmail.com", ...]   solo ven
+// Escribe los correos en minúsculas.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function email() {
+      return request.auth != null && request.auth.token.email_verified == true
+        ? request.auth.token.email.lower()
+        : '';
+    }
+    function members() {
+      return get(/databases/$(database)/documents/access/members).data;
+    }
+    function isEditor() {
+      return email() != '' && email() in members().get('editors', []);
+    }
+    function isMember() {
+      return isEditor() || (email() != '' && email() in members().get('viewers', []));
+    }
+
+    match /access/members {
+      allow read: if isMember();
+      allow write: if false;
+    }
+
+    match /{coll}/{docId} {
+      allow read: if coll in ['dogs', 'people', 'routines', 'walks', 'overrides', 'checks', 'config'] && isMember();
+      allow write: if coll in ['dogs', 'people', 'routines', 'walks', 'overrides', 'checks', 'config'] && isEditor();
+    }
+  }
+}
