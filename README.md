@@ -8,7 +8,7 @@ App para organizar quién saca a los perros: rutinas semanales, cambios de un d�
 
 ## 1. Crear el proyecto de Firebase
 
-1. Entra en <https://console.firebase.google.com> y pulsa **Crear un proyecto**. Ponle un nombre (por ejemplo `turnos-paseo`). Google Analytics no hace falta.
+1. Entra en <https://console.firebase.google.com> y pulsa **Crear un proyecto**. Ponle un nombre (por ejemplo `waggo`). Google Analytics no hace falta.
 2. En la página del proyecto, pulsa el icono **Web** (`</>`) para añadir una app web. Ponle un apodo y **no** marques Firebase Hosting.
 3. Te enseña un bloque `const firebaseConfig = { ... }`. Copia esos valores en [`firebase-config.js`](firebase-config.js), sustituyendo los del ejemplo.
 
@@ -40,9 +40,9 @@ Escribe los correos **en minúsculas**. Para añadir a alguien más adelante, ed
 
 ## 5. Publicar en GitHub Pages
 
-1. Crea un repositorio nuevo en GitHub (por ejemplo `turnos-paseo`) y sube el contenido de esta carpeta a la rama `main`.
+1. Crea un repositorio nuevo en GitHub (por ejemplo `waggo`) y sube el contenido de esta carpeta a la rama `main`.
 2. En el repositorio: **Settings → Pages → Build and deployment**. En *Source* elige **Deploy from a branch**, rama `main`, carpeta `/ (root)`, y guarda.
-3. En un minuto la app estará en `https://raulbarro14.github.io/turnos-paseo/`.
+3. En un minuto la app estará en `https://raulbarro14.github.io/waggo/`.
 
 ## 6. Instalarla
 
